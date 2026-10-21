@@ -11,6 +11,10 @@ project runs belongs in that project, and shared GitHub Actions in
 - [Repository checklist](docs/repository-checklist.md): what every new
   repository gets, and what to check on an existing one.
 
+All of it applies only to first-party repositories, those whose `origin`
+custom property is `first-party`; forks and mirrors follow their upstream
+(see the checklist's "Scope").
+
 Changes here are reviewed by an agent
 ([review.yml](.github/workflows/review.yml)), as in the organization's other
 onboarded repositories; that review is the merge approval.

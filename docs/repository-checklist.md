@@ -4,9 +4,25 @@
 
 What a repository in cgwalters-forge should have. Follow it when creating
 one, and check existing repositories against it when something here
-changes; not every existing repository matches it yet. Mirrors of upstream
-projects (the `bot-midstream` topic) keep their upstream's settings and are
-out of scope.
+changes; not every existing repository matches it yet.
+
+## Scope
+
+These policies and procedures apply only to first-party repositories: those
+whose `origin` custom property is `first-party`, matching the search filter
+`org:cgwalters-forge props.origin:first-party`
+([list](https://github.com/search?q=org%3Acgwalters-forge+props.origin%3Afirst-party&type=repositories)).
+Repositories with `origin` set to `fork` (a GitHub fork of another project,
+the `bot-midstream` mirrors included) or `mirror` (a copy of a project hosted
+elsewhere, such as base-images) follow their upstream's conventions and get
+none of this, even where an agent wrote the text.
+
+Set `origin` when creating a repository, from the start: `first-party` for
+our own projects, `fork` for a GitHub fork, `mirror` for a mirror that is not
+one. A repository without a value is out of scope until it has one.
+
+First-party and forked repositories may later move to separate
+organizations; until then this property is the line between them.
 
 ## Name and visibility
 
@@ -64,8 +80,7 @@ At creation, also:
 
 ## Generated documents
 
-In first-party repositories, every Markdown document an LLM wrote or
-substantially rewrote, READMEs and everything under `docs/` included, starts
+Every Markdown document an LLM wrote or substantially rewrote, READMEs and everything under `docs/` included, starts
 with this notice as the first
 line under its title:
 
@@ -78,10 +93,6 @@ search. Never name a model, provider or tool: nearly every document is the
 work of several. Context may follow in further sentences, such as "Nothing
 in it was run." When cgwalters has reviewed the text, the second sentence
 says so, or the notice goes.
-
-Forks and mirrors of other projects (GitHub forks, and the `bot-midstream`
-repositories) never get it, even for text an agent wrote there: their
-documents follow their upstream's conventions.
 
 Files that are input to an agent rather than documents for people
 (`AGENTS.md`, `CLAUDE.md`, skills' `SKILL.md`, review and task prompts under
