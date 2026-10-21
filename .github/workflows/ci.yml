@@ -1,0 +1,37 @@
+name: ci
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  # The shared workflow check: actionlint, zizmor and the runner-label
+  # policy (cgwalters-forge/actions lint/README.md).
+  lint:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cgwalters-forge/actions/lint@main
+
+  # Require only ci in the ruleset, on both PR and merge-group commits.
+  ci:
+    if: ${{ always() }}
+    needs: [lint]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: jq -e 'all(.[]; .result == "success")' <<< "$RESULTS"

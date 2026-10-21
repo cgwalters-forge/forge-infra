@@ -1,0 +1,13 @@
+# Moves the commit pins of third-party actions. Our own cgwalters-forge
+# references follow main, except the review wrapper's commit pin, which
+# moves by a reviewed change here.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # A release has a week to be found compromised and pulled before a pin
+    # moves to it.
+    cooldown:
+      default-days: 7

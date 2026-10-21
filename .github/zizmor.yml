@@ -1,0 +1,9 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # Our own actions follow @main, or a release tag for agentic-job
+        # (cgwalters-forge/tracker#544), or a commit for the review wrapper;
+        # other actions must be pinned by commit.
+        "cgwalters-forge/*": ref-pin
+        "*": hash-pin
