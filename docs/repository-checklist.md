@@ -42,6 +42,11 @@ dismissed when new commits are pushed.
   publishes GitHub Pages sets its homepage to the Pages URL
   (`https://cgwalters-forge.github.io/<name>/`) in the same change that
   turns Pages on, so the site is one click from the repository.
+- **README**: in a repository with a site, README.md stays minimal: what
+  the project is in a sentence or two, a prominent link to the site, and a
+  relative link to the documentation's source in the checkout (for example
+  `docs/`), so an agent working in a clone can follow it offline. Everything
+  else lives on the site.
 - **LLM notice**: every generated document carries the notice below as
   the first line under its title (see "Generated documents").
 - **License**: Apache-2.0 unless the project says otherwise (agent-board's
