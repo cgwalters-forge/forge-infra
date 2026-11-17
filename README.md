@@ -18,3 +18,22 @@ custom property is `first-party`; forks and mirrors follow their upstream
 Changes here are reviewed by an agent
 ([review.yml](.github/workflows/review.yml)), as in the organization's other
 onboarded repositories; that review is the merge approval.
+
+## Preview Renovate locally
+
+To see what the forge preset detects, install Renovate and run it from a
+first-party checkout without a Renovate configuration. Use a shell without
+inherited `RENOVATE_*` settings or hosted Renovate credentials.
+
+```sh
+LOG_LEVEL=debug RENOVATE_CONFIG_FILE= renovate \
+  --platform=local --dry-run=lookup --onboarding=false --clone-submodules=false \
+  --global-extends='github>cgwalters-forge/actions//renovate/forge'
+```
+
+Look for `packageFiles with updates` in the debug output. Renovate reads
+tracked and staged files without fetching submodules. An existing Renovate
+configuration can change or disable the preview. GitHub tag and release
+lookups can require `GITHUB_COM_TOKEN`; use read access only. The preview does
+not onboard the repository or open pull requests. There is no scheduled
+updater; keep existing update automation in place.
