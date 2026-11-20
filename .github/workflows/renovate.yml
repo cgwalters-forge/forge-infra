@@ -1,0 +1,66 @@
+# Daily self-hosted Renovate over every first-party repository
+# (renovate/config.js), after bootc-dev/infra's renovate.yml.
+# On main it exchanges its OIDC token through Octo-STS for a short-lived
+# token (the org's .github/chainguard/renovate.sts.yaml); a pull request's
+# run gets none and is a full dry run with the read-only token.
+name: renovate
+on:
+  pull_request:
+    paths: [renovate/**, .github/workflows/renovate.yml]
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: renovate-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  renovate:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: token
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
+        with:
+          scope: ${{ github.repository_owner }}
+          identity: renovate
+      # The scope is docs/repository-checklist.md's: unarchived repositories
+      # whose origin custom property is first-party, read fresh on every run
+      # (search ignores the props qualifier). It fails closed if any
+      # repository's properties are missing, and checks the filter first.
+      - id: repos
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          FIRST_PARTY: >-
+            if all(.[]; has("custom_properties")) then [.[] | select((.archived | not)
+            and .custom_properties.origin == "first-party") | .full_name]
+            else error("custom properties unreadable") end
+          CASES: >-
+            [{"full_name":"a","archived":false,"custom_properties":{"origin":"first-party"}},
+            {"full_name":"b","archived":false,"custom_properties":{"origin":"mirror"}},
+            {"full_name":"c","archived":false,"custom_properties":{"origin":"fork"}},
+            {"full_name":"d","archived":false,"custom_properties":{}},
+            {"full_name":"e","archived":true,"custom_properties":{"origin":"first-party"}}]
+        run: |
+          [ "$(jq -c "$FIRST_PARTY" <<< "$CASES")" = '["a"]' ] || { echo "::error::the first-party filter is wrong"; exit 1; }
+          ! jq "$FIRST_PARTY" <<< '[{"full_name":"x"}]' > /dev/null 2>&1 || { echo "::error::the filter does not fail closed"; exit 1; }
+          repos=$(gh api --paginate "orgs/$OWNER/repos?per_page=100" --jq '.[]' | jq -sc "$FIRST_PARTY")
+          [ "$(jq length <<< "$repos")" -gt 0 ] || { echo "::error::no first-party repositories found"; exit 1; }
+          echo "list=$repos" >> "$GITHUB_OUTPUT"
+      - uses: renovatebot/github-action@266fef21329c44765ad42f9dea1f01f5d2d91084 # v46.3.13
+        env:
+          RENOVATE_REPOSITORIES: ${{ steps.repos.outputs.list }}
+          FORGE_RENOVATE_LIVE: ${{ steps.token.outputs.token != '' }}
+        with:
+          configurationFile: renovate/config.js
+          # Only RENOVATE_* reaches the container unless named here.
+          additional-env-list: FORGE_RENOVATE_LIVE
+          token: ${{ steps.token.outputs.token || github.token }}
