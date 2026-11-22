@@ -23,6 +23,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: cgwalters-forge/actions/lint@main
+      - run: timeout 90s ruby workflow/mirror-test.rb
 
   # Require only ci in the ruleset, on both PR and merge-group commits.
   ci:

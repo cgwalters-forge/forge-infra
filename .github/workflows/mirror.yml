@@ -1,0 +1,83 @@
+name: Mirror base images
+on:
+  schedule:
+    - cron: '23 4 * * *' # UTC
+  workflow_dispatch:
+
+permissions: {}
+
+# Do not race two publishers updating the same moving tags.
+concurrency:
+  group: mirror-base-images
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    # Opt in before creating packages; only publish from main.
+    if: github.ref == 'refs/heads/main' && vars.MIRROR_BASE_IMAGES == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - source: quay.io/fedora/fedora-bootc:45
+            package: fedora-bootc
+            tag: '45'
+          # START_IMAGE in atomic-linux-sandbox/tests/to-existing-root-vm-test.sh.
+          - source: registry.fedoraproject.org/fedora-bootc@sha256:37832fbd95c5c168f566736e3a3fab6f0dab85ab389f04112f2e2c6e11fe9062
+            package: fedora-bootc-ostree
+            tag: latest
+          - source: quay.io/hummingbird-community/os-minimal:latest
+            package: os-minimal
+            tag: latest
+    steps:
+      - name: Install regctl
+        shell: bash
+        run: |
+          # Verify the binary before running it in a job with package write access.
+          curl --fail --silent --show-error --location --retry 3 -o "$RUNNER_TEMP/regctl" \
+            https://github.com/regclient/regclient/releases/download/v0.11.7/regctl-linux-amd64
+          printf '%s  %s\n' 3737fbbdd791e04e7a831640b681f3397a376498e80e2ad9b1b2d27296f239bc "$RUNNER_TEMP/regctl" | sha256sum --check
+          chmod u+x "$RUNNER_TEMP/regctl"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Copy the snapshot, then advance the moving tag
+        shell: bash
+        env:
+          SOURCE: ${{ matrix.source }}
+          PACKAGE: ${{ matrix.package }}
+          TAG: ${{ matrix.tag }}
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          export REGCTL_CONFIG="${RUNNER_TEMP}/mirror-auth.json"
+          printf '%s' "$REGISTRY_TOKEN" | regctl registry login ghcr.io --user "$GITHUB_ACTOR" --pass-stdin
+          remote="ghcr.io/cgwalters-forge/${PACKAGE}"
+          # A same-day dispatch or rerun must not overwrite an earlier pin.
+          dated="${TAG}.$(date -u +%Y%m%d).${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          # Capture all platforms and attachments before publishing. An OCI layout
+          # keeps referrer indexes under sha256-<digest> tags, where an upstream
+          # digest tag of the same name would replace them, so stage OCI referrers
+          # and legacy digest tags in separate fresh layouts.
+          stage=$(mktemp -d "$RUNNER_TEMP/mirror.XXXXXXXX")
+          referrers="ocidir://${stage}/referrers" legacy="ocidir://${stage}/digest-tags"
+          regctl image copy --referrers "$SOURCE" "${referrers}:image"
+          digest=$(regctl image digest "${referrers}:image")
+          repo=${SOURCE%@*}
+          regctl image copy "${referrers}:image" "${legacy}:image"
+          regctl image copy --digest-tags "${repo%:*}@${digest}" "${legacy}:image"
+          regctl image copy --referrers "${referrers}:image" "${remote}@${digest}"
+          for layout in "$referrers referrers" "$legacy attachment"; do
+            read -r dir kind <<< "$layout"
+            tags=$(regctl tag ls "$dir")
+            while IFS= read -r tag; do
+              [[ -n $tag && $tag != image ]] || continue
+              # Hash the layout tag so even long upstream names fit OCI's tag limit.
+              key=$(printf '%s' "$tag" | sha256sum)
+              regctl image copy "${dir}:${tag}" "${remote}:${dated}.${kind}.${key%% *}"
+            done <<< "$tags"
+          done
+          regctl image copy "${remote}@${digest}" "${remote}:${dated}"
+          regctl image copy "${remote}:${dated}" "${remote}:${TAG}"
