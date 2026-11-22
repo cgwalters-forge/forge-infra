@@ -33,6 +33,9 @@ jobs:
           - source: quay.io/hummingbird-community/os-minimal:latest
             package: os-minimal
             tag: latest
+          - source: ghcr.io/projectbluefin/utah:testing
+            package: utah
+            tag: testing
     steps:
       - name: Install regctl
         shell: bash
