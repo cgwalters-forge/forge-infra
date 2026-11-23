@@ -11,7 +11,16 @@ ZOT_URL = 'https://github.com/project-zot/zot/releases/download/v2.1.23/zot-linu
 ZOT_SHA256 = '8a6e77686bc0e7751766c49828cff6c66b115c854d350c9d936b855463f6c973'.freeze
 
 workflow = YAML.safe_load_file('.github/workflows/mirror.yml')
-install, mirror = workflow.fetch('jobs').fetch('mirror').fetch('steps').map { |s| s.fetch('run') }
+job = workflow.fetch('jobs').fetch('mirror')
+forgejo = job.fetch('strategy').fetch('matrix').fetch('include').select { |entry| entry.fetch('package') == 'forgejo' }
+expected_forgejo = {
+  'source' => 'data.forgejo.org/forgejo/forgejo@sha256:fcd19ff4ebc85fb098a67e8e1d0d5a84d07dd6e8a23edcfdfd5b71a6178953be',
+  'package' => 'forgejo',
+  'tag' => '17.0.1'
+}
+abort 'The Forgejo mirror must match the agent-board CI pin' unless forgejo == [expected_forgejo]
+
+install, mirror = job.fetch('steps').map { |s| s.fetch('run') }
 bash = %w[bash -euo pipefail -c]
 
 # Map the real copy step's refs to the local registry and a disposable OCI layout.

@@ -24,9 +24,9 @@ onboarded repositories; that review is the merge approval.
 [Mirror base images](.github/workflows/mirror.yml) runs daily and can be
 dispatched on `main`. To enable publishing, set the repository Actions variable
 `MIRROR_BASE_IMAGES` to `true`. After the first push, a package admin must set
-`fedora-bootc`, `fedora-bootc-ostree` and `os-minimal` to **Public** in their
-GHCR package settings. GitHub creates new packages as private; verify that
-anonymous pulls work before switching consumers to the mirrors.
+`fedora-bootc`, `fedora-bootc-ostree`, `os-minimal` and `forgejo` to **Public**
+in their GHCR package settings. GitHub creates new packages as private; verify
+that anonymous pulls work before switching consumers to the mirrors.
 Only grant repository write access to trusted publishers: GHCR grants package
 write access to the repository, not just to this workflow on `main`.
 
