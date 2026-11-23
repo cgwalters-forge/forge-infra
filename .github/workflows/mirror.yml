@@ -36,6 +36,10 @@ jobs:
           - source: ghcr.io/projectbluefin/utah:testing
             package: utah
             tag: testing
+          # Forgejo service in agent-board/.github/workflows/ci.yml.
+          - source: data.forgejo.org/forgejo/forgejo@sha256:fcd19ff4ebc85fb098a67e8e1d0d5a84d07dd6e8a23edcfdfd5b71a6178953be
+            package: forgejo
+            tag: '17.0.1'
     steps:
       - name: Install regctl
         shell: bash
