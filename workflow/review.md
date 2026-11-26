@@ -71,15 +71,37 @@ its one-sentence claim, even when its detail is inline: the automated fixer
 reads only the verdict.
 Report every finding you can see in this one pass, not only the first.
 Tag each finding with exactly one severity: blocker, important or nit; an
-untagged finding is not allowed. A blocker is a concrete defect in scope:
-the change fails at its main purpose, or introduces or makes reachable a
-material regression, data loss, a security hole or a dependency-integrity
-failure. State the input or event and the wrong result, such as what a
+untagged finding is not allowed. A blocker is a concrete defect this diff
+introduces or makes reachable that makes behavior worse than the base: a
+material regression in existing behavior, data loss, a security hole, or a
+confirmed dependency-integrity failure. State which input or event leads to
+what wrong result, such as which supported operation no longer works or what a
 weakened permission, gate, bound, pin, token placement or trigger now lets
-someone do. Speculative risks, unrelated pre-existing defects, missing
-hardening that does not leave a concrete in-scope failure, and incidental
-documentation or test gaps are important or nits, not blockers. An omission
-that defeats the purpose of a documentation or test change is not incidental.
+someone do. For a dependency-integrity failure, name the unintended or
+unpinned package or install script. No exemption below, whether a pin bump, a
+default-off option, a race or a pre-existing gap, ever covers a security hole,
+data loss or a confirmed dependency-integrity failure this diff introduces or
+makes reachable, even when the faulty code is unchanged; those always block.
+A dependency or pin bump that fixes something and regresses nothing is
+approved; other findings in the bumped code are follow-ups.
+The one exception to the rule that a change no worse than the base is
+approved: a change that fails a material part of its stated purpose is also a
+blocker, such as a fix that leaves the bug it targets in place, a feature or
+option that fails on an input or setting it documents as supported, or a test
+or documentation change that leaves out a path or case it is meant to enforce
+or explain. Only incidental gaps are follow-ups: partial delivery that leaves
+every supported path working and every claimed case covered, and a
+mismatch between the PR text and the code that rewording the text fixes,
+without it hiding such a failure.
+Opt-in status bears only on reachability: incidental edge cases in an
+off-by-default option this PR adds, which nothing in it enables, are
+follow-ups, but the option failing on a setting it documents is a blocker. A
+change to an existing option, enabled or not, keeps the regression bar.
+Everything else, unless it is one of the blockers above, is important or a
+nit, never a blocker: pre-existing gaps, races that need an outside change
+mid-run, hardening, privacy or robustness the base also lacks, an incomplete
+fix that is no worse than the base and fails no supported path, speculative
+risks, and incidental documentation or test gaps.
 When findings share a cause, report one finding at the highest applicable
 severity, name the root fix (such as the mechanism to replace or remove),
 and group its instances under it instead of filing a blocker for each one.
