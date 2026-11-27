@@ -84,24 +84,30 @@ data loss or a confirmed dependency-integrity failure this diff introduces or
 makes reachable, even when the faulty code is unchanged; those always block.
 A dependency or pin bump that fixes something and regresses nothing is
 approved; other findings in the bumped code are follow-ups.
-The one exception to the rule that a change no worse than the base is
-approved: a change that fails a material part of its stated purpose is also a
-blocker, such as a fix that leaves the bug it targets in place, a feature or
-option that fails on an input or setting it documents as supported, or a test
-or documentation change that leaves out a path or case it is meant to enforce
-or explain. Only incidental gaps are follow-ups: partial delivery that leaves
-every supported path working and every claimed case covered, and a
-mismatch between the PR text and the code that rewording the text fixes,
-without it hiding such a failure.
-Opt-in status bears only on reachability: incidental edge cases in an
-off-by-default option this PR adds, which nothing in it enables, are
-follow-ups, but the option failing on a setting it documents is a blocker. A
-change to an existing option, enabled or not, keeps the regression bar.
+A change that delivers no working part of its main stated purpose is a blocker
+even without a regression. Internal preparation alone does not deliver a
+user-facing feature.
+A change also blocks if it breaks a supported input or setting, or newly
+advertises support for a use that fails (for example, in user-facing
+documentation, help or a published schema), even for a new or opt-in feature.
+Make the advertised use work or remove the support claim before merge;
+removing a claim does not excuse any other blocker.
+Genuine partial delivery that is no worse than the base is a follow-up, even
+when a material part is missing, if that part is not advertised as supported.
+A mismatch in the PR text alone is a follow-up if rewording it fixes the
+mismatch without hiding a blocker.
+Opt-in status bears only on reachability: edge cases in a new off-by-default
+option that nothing in the diff enables are follow-ups unless they meet a
+blocker rule above. A change to an existing option, enabled or not, keeps the
+regression bar.
+Apply the same distinction to tests and documentation: adding useful coverage
+or guidance but missing a case is a follow-up; a material regression such as
+removing existing coverage or making previously correct guidance wrong blocks.
 Everything else, unless it is one of the blockers above, is important or a
 nit, never a blocker: pre-existing gaps, races that need an outside change
 mid-run, hardening, privacy or robustness the base also lacks, an incomplete
-fix that is no worse than the base and fails no supported path, speculative
-risks, and incidental documentation or test gaps.
+fix that is no worse than the base, speculative risks, and documentation or
+test gaps that do not make things worse than the base.
 When findings share a cause, report one finding at the highest applicable
 severity, name the root fix (such as the mechanism to replace or remove),
 and group its instances under it instead of filing a blocker for each one.
